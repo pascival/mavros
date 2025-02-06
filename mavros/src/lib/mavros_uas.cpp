@@ -368,6 +368,8 @@ rcl_interfaces::msg::SetParametersResult UAS::on_set_parameters_cb(
 
 void UAS::connect_to_router()
 {
+  // TODO (glueck)
+  // here is quality of service configured
   auto qos = rclcpp::QoS(
     1000).best_effort().durability_volatile();
 
@@ -396,6 +398,9 @@ void UAS::recv_message(const mavros_msgs::msg::Mavlink::SharedPtr rmsg)
 
 void UAS::send_message(const mavlink::Message & obj, const uint8_t src_compid)
 {
+  // TODO (glueck)
+  RCLCPP_INFO(get_logger(), "8. in send_message");
+
   mavlink::mavlink_message_t msg;
   mavlink::MsgMap map(msg);
 

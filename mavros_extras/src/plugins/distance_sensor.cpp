@@ -215,6 +215,7 @@ private:
   {
     mavlink::common::msg::DISTANCE_SENSOR ds = {};
 
+    // RCLCPP_INFO(get_logger(), "6. In distance_sensor");
     // [[[cog:
     // for f in ('time_boot_ms',
     //     'min_distance',
@@ -230,6 +231,12 @@ private:
     //     'signal_quality'):
     //     cog.outl(f"ds.{f} = {f};")
     // ]]]
+    //RCLCPP_INFO(get_logger(), "time_boot_ms=%u", time_boot_ms);
+    //RCLCPP_INFO(get_logger(), "current_distance=%u", current_distance);
+    // RCLCPP_INFO(get_logger(), "type=%d", type);
+    // RCLCPP_INFO(get_logger(), "id=%d", id);
+    // RCLCPP_INFO(get_logger(), "covariance=%d", covariance);
+    // RCLCPP_INFO(get_logger(), "signal_quality=%d", signal_quality);
     ds.time_boot_ms = time_boot_ms;
     ds.min_distance = min_distance;
     ds.max_distance = max_distance;
@@ -243,8 +250,15 @@ private:
     ds.quaternion = quaternion;
     ds.signal_quality = signal_quality;
     // [[[end]]] (checksum: b268a118afee5e2c6cb3e1094a578fff)
+    
+    rclcpp::Time cur_ts = get_clock()->now();
+
+    // RCLCPP_INFO(get_logger(), "7. uas->send_message(): calling at %u", get_time_boot_ms(cur_ts));
+    RCLCPP_INFO(get_logger(), "(distance_sensor) Distance=%d cm / Delay=%d ms", current_distance, get_time_boot_ms(cur_ts)-time_boot_ms);
+
 
     uas->send_message(ds);
+    // RCLCPP_INFO(get_logger(), "x. uas->send_message(): called");
   }
 
   /* -*- mid-level helpers -*- */
@@ -263,6 +277,8 @@ private:
     std::shared_lock lock(mutex);
 
     auto lg = get_logger();
+
+    RCLCPP_INFO(get_logger(), "in handle_distance_sensor");
 
     auto it = sensor_map.find(dist_sen.id);
     if (it == sensor_map.end()) {
@@ -445,6 +461,7 @@ DistanceSensorItem::DistanceSensorItem(
   }
 
   // create topic handles
+  // (glueck) -> qos of sensor_data
   auto sensor_qos = rclcpp::SensorDataQoS();
   if (!is_subscriber) {
     pub = owner->node->create_publisher<Range>(topic_name, sensor_qos);
@@ -458,9 +475,18 @@ DistanceSensorItem::DistanceSensorItem(
 
 void DistanceSensorItem::range_cb(const Range::SharedPtr msg)
 {
+  // static bool first_call = true;
+  // static uint64_t offsett_ms = 0; 
+
   using mavlink::common::MAV_DISTANCE_SENSOR;
 
-  uint8_t type = 0;
+  // TODO(glueck)
+  // glueck added
+  // RCLCPP_INFO(rclcpp::get_logger("mavros.param"), "=========================");
+  // RCLCPP_INFO(rclcpp::get_logger("mavros.param"), "5. in range_cb");
+
+
+  uint8_t type = 3; // glueck changed from 0 to 3
   uint8_t covariance_ = 0;
 
   if (covariance > 0) {
@@ -478,6 +504,19 @@ void DistanceSensorItem::range_cb(const Range::SharedPtr msg)
 
   std::array<float, 4> q;
   ftf::quaternion_to_mavlink(quaternion, q);
+
+  // TODO (glueck): first call -> safe offsett
+  // uint64_t ts_radar_ms = msg->header.stamp.sec*1000 + msg->header.stamp.nanosec/1000000;
+  // RCLCPP_INFO(rclcpp::get_logger("mavros"), "Radar TS [%lu] ms", ts_radar_ms);
+  // uint32_t time_boot_ms = ;
+  // if (first_call) {
+  //   first_call = false;
+  //   offsett_ms = ts_radar_ms - time_boot_ms;
+  //   RCLCPP_INFO(rclcpp::get_logger("mavros.param"), "FIRST CALL: got offsett [%lu] ms", offsett_ms);
+  // } else {
+  //   uint32_t additional_off_ms = ts_radar_ms - time_boot_ms -offsett_ms; 
+  //   RCLCPP_INFO(rclcpp::get_logger("mavros.param"), "Current additional offsett: [%d]", additional_off_ms);
+  // }
 
   owner->distance_sensor(
     get_time_boot_ms(msg->header.stamp),
