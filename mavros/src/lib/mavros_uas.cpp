@@ -368,7 +368,6 @@ rcl_interfaces::msg::SetParametersResult UAS::on_set_parameters_cb(
 
 void UAS::connect_to_router()
 {
-  // TODO (glueck)
   // here is quality of service configured
   auto qos = rclcpp::QoS(
     1000).best_effort().durability_volatile();
@@ -398,13 +397,24 @@ void UAS::recv_message(const mavros_msgs::msg::Mavlink::SharedPtr rmsg)
 
 void UAS::send_message(const mavlink::Message & obj, const uint8_t src_compid)
 {
+  uint32_t radar_ts_ms = 0;
   // TODO (glueck)
-  RCLCPP_INFO(get_logger(), "8. in send_message");
-
+  // RCLCPP_INFO(get_logger(), "(UAS) 8. in send_message");
+  try {
+    mavlink::common::msg::DISTANCE_SENSOR const& m = dynamic_cast<mavlink::common::msg::DISTANCE_SENSOR const&>(obj);
+    //RCLCPP_INFO_STREAM(get_logger(), "Message (obj): " << dynamic_cast<&mavlink::common::msg::DISTANCE_SENSOR>(obj).time_boot_ms);
+    //RCLCPP_INFO(get_logger(), "Message (obj.time_boot_ms): %u", m.time_boot_ms);
+    radar_ts_ms = m.time_boot_ms;
+  } catch (...) {
+    RCLCPP_INFO(get_logger(), "(UAS) cast failed");
+  }
+  // RCLCPP_INFO_STREAM(get_logger(), "Message (obj): " << obj);
+  
   mavlink::mavlink_message_t msg;
   mavlink::MsgMap map(msg);
 
   auto mi = obj.get_message_info();
+  // RCLCPP_INFO_STREAM(get_logger(), "Message Info (mi): " << mi);
 
   obj.serialize(map);
   mavlink::mavlink_finalize_message_buffer(
@@ -413,11 +423,20 @@ void UAS::send_message(const mavlink::Message & obj, const uint8_t src_compid)
 
   mavros_msgs::msg::Mavlink rmsg{};
   auto ok = mavros_msgs::mavlink::convert(msg, rmsg);
-
+  
   rmsg.header.stamp = this->now();
   rmsg.header.frame_id = this->get_name();
 
+  //RCLCPP_INFO_STREAM(get_logger(), "Mavlink msg filled (rmsg): " << rmsg);
+ 
+  uint32_t cur_ts_ms = rclcpp::Time(this->now()).nanoseconds() / 1000000;
+  // RCLCPP_INFO_STREAM(get_logger(), "(cur_ts_ms): " << cur_ts_ms);
+  // uint32_t cur_ts_ms = rmsg.header.stamp;
   if (this->sink && ok) {
+    if (radar_ts_ms != 0) {
+      RCLCPP_INFO(get_logger(), "UAS publishing to router. Delay until radar = %u-%u = %u ms",
+        cur_ts_ms, radar_ts_ms, cur_ts_ms-radar_ts_ms);
+    }
     this->sink->publish(rmsg);
   }
 }
