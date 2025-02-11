@@ -406,7 +406,7 @@ void UAS::send_message(const mavlink::Message & obj, const uint8_t src_compid)
     //RCLCPP_INFO(get_logger(), "Message (obj.time_boot_ms): %u", m.time_boot_ms);
     radar_ts_ms = m.time_boot_ms;
   } catch (...) {
-    RCLCPP_INFO(get_logger(), "(UAS) cast failed");
+    //RCLCPP_INFO(get_logger(), "(UAS) cast failed");
   }
   // RCLCPP_INFO_STREAM(get_logger(), "Message (obj): " << obj);
   
@@ -434,8 +434,8 @@ void UAS::send_message(const mavlink::Message & obj, const uint8_t src_compid)
   // uint32_t cur_ts_ms = rmsg.header.stamp;
   if (this->sink && ok) {
     if (radar_ts_ms != 0) {
-      RCLCPP_INFO(get_logger(), "UAS publishing to router. Delay until radar = %u-%u = %u ms",
-        cur_ts_ms, radar_ts_ms, cur_ts_ms-radar_ts_ms);
+      // RCLCPP_INFO(get_logger(), "UAS publishing to router. Delay until radar = %u-%u = %u ms",
+      //   cur_ts_ms, radar_ts_ms, cur_ts_ms-radar_ts_ms);
     }
     this->sink->publish(rmsg);
   }

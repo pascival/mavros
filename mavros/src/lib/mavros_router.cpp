@@ -98,8 +98,8 @@ retry:
       target_addr & 0xff);
   } else {
     uint32_t cur_ts_ms = rclcpp::Time(this->now()).nanoseconds() / 1000000;
-    RCLCPP_INFO(get_logger(), " (router) sent %zu bytes(?) at %u", sent_cnt, cur_ts_ms);
-    RCLCPP_INFO(get_logger(), "----------------------------------------------");
+    //RCLCPP_INFO(get_logger(), " (router) sent %zu bytes(?) at %u", sent_cnt, cur_ts_ms);
+    //RCLCPP_INFO(get_logger(), "----------------------------------------------");
   }
 }
 
@@ -344,7 +344,7 @@ void Endpoint::recv_message(const mavlink_message_t * msg, const Framing framing
   auto & nh = this->parent;
   // TODO 2 (glueck)
 
-  RCLCPP_INFO(nh->get_logger(), " (router) recv_message");
+  //RCLCPP_INFO(nh->get_logger(), " (router) recv_message");
   rcpputils::assert_true(msg, "msg not nullptr");
   // rcpputils::assert_true(this->parent, "parent not nullptr");
 
@@ -530,7 +530,7 @@ void ROSEndpoint::ros_recv_message(const mavros_msgs::msg::Mavlink::SharedPtr rm
   // TODO 1 (glueck)
   if (auto & nh = this->parent) {
     uas_ts_ms = rclcpp::Time(rmsg->header.stamp).nanoseconds() / 1000000;
-    RCLCPP_INFO(nh->get_logger(), "(mavros_router.cpp: ros_recv_message - uas_ts = %u)", uas_ts_ms);
+    // RCLCPP_INFO(nh->get_logger(), "(mavros_router.cpp: ros_recv_message - uas_ts = %u)", uas_ts_ms);
   }
   rcpputils::assert_true(!!rmsg, "rmsg not nullptr");
 

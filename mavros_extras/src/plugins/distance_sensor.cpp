@@ -213,6 +213,7 @@ private:
     float horizontal_fov, float vertical_fov,
     std::array<float, 4> quaternion, uint8_t signal_quality)
   {
+    static uint32_t last_distance = 999;
     mavlink::common::msg::DISTANCE_SENSOR ds = {};
 
     // RCLCPP_INFO(get_logger(), "6. In distance_sensor");
@@ -253,9 +254,10 @@ private:
     
     rclcpp::Time cur_ts = get_clock()->now();
 
-    // RCLCPP_INFO(get_logger(), "7. uas->send_message(): calling at %u", get_time_boot_ms(cur_ts));
-    RCLCPP_INFO(get_logger(), "(distance_sensor) Distance=%d cm / Delay=%d ms", current_distance, get_time_boot_ms(cur_ts)-time_boot_ms);
-
+    if (current_distance != last_distance) {
+      RCLCPP_INFO(get_logger(), "(distance_sensor) Distance=%d cm / Delay=%d ms", current_distance, get_time_boot_ms(cur_ts)-time_boot_ms);
+      last_distance = current_distance;
+    }
 
     uas->send_message(ds);
     // RCLCPP_INFO(get_logger(), "x. uas->send_message(): called");
